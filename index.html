@@ -49,7 +49,11 @@
   <div id="board"></div>
 
   <input type="text" id="fenInput" placeholder="Enter FEN" style="width: 400px; padding: 6px; margin-bottom: 10px;">
+  
   <button onclick="loadFEN()">Load FEN</button>
+  
+  <button onclick="prevMove()">← Previous Move</button>
+  <button onclick="nextMove()">Next Move →</button>
 
   <button onclick="analyze()">Analyze</button>
 
@@ -61,6 +65,33 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 
   <script>
+    let moveHistory = [];
+let currentMoveIndex = -1;
+
+function loadPGN(pgn) {
+  game.reset();
+  game.load_pgn(pgn);               // load PGN into game
+  moveHistory = game.history();      // store all moves
+  currentMoveIndex = -1;             // start before first move
+  board.position(game.fen());        // update board
+}
+
+function prevMove() {
+  if (currentMoveIndex < 0) return;
+
+  game.undo();                       // undo last move
+  currentMoveIndex--;
+  board.position(game.fen());        // update board
+}
+
+function nextMove() {
+  if (currentMoveIndex >= moveHistory.length - 1) return;
+
+  currentMoveIndex++;
+  game.move(moveHistory[currentMoveIndex]); // make next move
+  board.position(game.fen());               // update board
+}
+
     // --- GAME LOGIC ---
     const game = new Chess();
 
