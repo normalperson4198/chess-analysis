@@ -80,9 +80,7 @@
     });
 
     // --- STOCKFISH WORKER ---
-    const engine = new Worker(
-      "https://cdn.jsdelivr.net/gh/niklasf/stockfish.js/stockfish.js"
-    );
+    const engine = new Worker("./engine/stockfish.js");
 
     engine.onmessage = (e) => {
       const line = e.data;
