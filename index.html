@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Custom Chess Analysis</title>
 
-  <!-- Chessboard CSS (REQUIRED) -->
+  <!-- Chessboard CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
 
   <style>
@@ -60,36 +60,30 @@
     </div>
   </div>
 
-  <!-- LIBRARIES (ORDER IS CRITICAL) -->
-
-  <!-- jQuery MUST be first for chessboard.js -->
+  <!-- LIBRARIES (STABLE GLOBAL BUILDS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
-  <!-- chess.js (GLOBAL BUILD) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
-  <!-- chessboard.js (GLOBAL BUILD) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 
-  <!-- Stockfish WASM -->
-  <script src="https://cdn.jsdelivr.net/npm/stockfish@16.1.0/src/stockfish.js"></script>
+  <!-- Stockfish: use Worker directly (MOST RELIABLE ON GITHUB PAGES) -->
+  <script>
+    function createStockfish() {
+      return new Worker('https://cdn.jsdelivr.net/npm/stockfish@16.1.0/src/stockfish.js');
+    }
+  </script>
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      // Sanity checks
       console.log('Chess:', typeof Chess);
       console.log('Chessboard:', typeof Chessboard);
-
-      if (typeof Chess === 'undefined' || typeof Chessboard === 'undefined') {
-        alert('Libraries failed to load. Check CDN cache.');
-        return;
-      }
 
       const game = new Chess();
 
       const board = Chessboard('board', {
         position: 'start',
         draggable: true,
+        // FIX 404s: explicitly set piece image source
+        pieceTheme: 'https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/img/chesspieces/wikipedia/{piece}.png',
         onDrop: (s, t) => {
           const m = game.move({ from: s, to: t, promotion: 'q' });
           if (!m) return 'snapback';
@@ -97,10 +91,10 @@
         }
       });
 
-      const engine = Stockfish();
+      const engine = createStockfish();
 
       engine.onmessage = e => {
-        const line = e.data || e;
+        const line = e.data;
         if (line.includes('score')) {
           const m = line.match(/score (cp|mate) (-?\d+)/);
           if (m) {
