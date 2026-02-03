@@ -68,29 +68,31 @@
     let moveHistory = [];
 let currentMoveIndex = -1;
 
+// Load PGN for move navigation
 function loadPGN(pgn) {
   game.reset();
-  game.load_pgn(pgn);               // load PGN into game
-  moveHistory = game.history();      // store all moves
-  currentMoveIndex = -1;             // start before first move
-  board.position(game.fen());        // update board
+  game.load_pgn(pgn);
+  moveHistory = game.history();
+  currentMoveIndex = -1;
+  board.position(game.fen());
 }
 
-function prevMove() {
-  if (currentMoveIndex < 0) return;
-
-  game.undo();                       // undo last move
-  currentMoveIndex--;
-  board.position(game.fen());        // update board
-}
-
+// Go to next move
 function nextMove() {
   if (currentMoveIndex >= moveHistory.length - 1) return;
-
   currentMoveIndex++;
-  game.move(moveHistory[currentMoveIndex]); // make next move
-  board.position(game.fen());               // update board
+  game.move(moveHistory[currentMoveIndex]);
+  board.position(game.fen());
 }
+
+// Go to previous move
+function prevMove() {
+  if (currentMoveIndex < 0) return;
+  game.undo();
+  currentMoveIndex--;
+  board.position(game.fen());
+}
+
 
     // --- GAME LOGIC ---
     const game = new Chess();
