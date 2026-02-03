@@ -53,11 +53,12 @@
   <div id="output">Engine output…</div>
 
   <!-- Dependencies -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0/chess.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 
   <script>
     // --- GAME LOGIC ---
@@ -67,7 +68,7 @@
       draggable: true,
       position: "start",
       pieceTheme:
-        "https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/img/chesspieces/wikipedia/{piece}.png",
+        "https://raw.githubusercontent.com/oakmac/chessboardjs/master/img/chesspieces/wikipedia/{piece}.png",
       onDrop: (source, target) => {
         const move = game.move({
           from: source,
