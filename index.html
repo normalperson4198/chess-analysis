@@ -87,6 +87,8 @@
       },
     });
 
+    board.position("start");
+
     // --- STOCKFISH WORKER ---
     const engine = new Worker("./engine/stockfish.js");
 
@@ -159,10 +161,6 @@
     currentMoveIndex--;
     board.position(game.fen());
   }
-
-  game.load(fen);       // load the FEN into the game
-  board.position(fen);  // update the board
-  document.getElementById("output").textContent = "FEN loaded!";
 }
 
   </script>
