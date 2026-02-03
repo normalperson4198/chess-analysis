@@ -51,6 +51,10 @@
   <input type="text" id="fenInput" placeholder="Enter FEN" style="width: 400px; padding: 6px; margin-bottom: 10px;">
   
   <button onclick="loadFEN()">Load FEN</button>
+
+  <!-- PGN input -->
+  <textarea id="pgnInput" placeholder="Paste PGN here" rows="4"></textarea>
+  <button onclick="loadPGN()">Load PGN</button>
   
   <button onclick="prevMove()">← Previous Move</button>
   <button onclick="nextMove()">Next Move →</button>
@@ -65,35 +69,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 
   <script>
-    let moveHistory = [];
-let currentMoveIndex = -1;
-
-// Load PGN for move navigation
-function loadPGN(pgn) {
-  game.reset();
-  game.load_pgn(pgn);
-  moveHistory = game.history();
-  currentMoveIndex = -1;
-  board.position(game.fen());
-}
-
-// Go to next move
-function nextMove() {
-  if (currentMoveIndex >= moveHistory.length - 1) return;
-  currentMoveIndex++;
-  game.move(moveHistory[currentMoveIndex]);
-  board.position(game.fen());
-}
-
-// Go to previous move
-function prevMove() {
-  if (currentMoveIndex < 0) return;
-  game.undo();
-  currentMoveIndex--;
-  board.position(game.fen());
-}
-
-
     // --- GAME LOGIC ---
     const game = new Chess();
 
@@ -136,14 +111,53 @@ function prevMove() {
       engine.postMessage("go depth 15");
     }
 
-    function loadFEN() {
-      const fen = document.getElementById("fenInput").value.trim();
-      if (!fen) return;
+  function loadFEN() {
+    const fen = document.getElementById("fenInput").value.trim();
+    if (!fen) return;
 
-      const valid = game.validate_fen(fen);
-  if (!valid.valid) {
-    alert("Invalid FEN: " + valid.error);
-    return;
+    const valid = game.validate_fen(fen);
+    if (!valid.valid) {
+      alert("Invalid FEN: " + valid.error);
+      return;
+    }
+
+    game.load(fen);
+    board.position(fen);
+    moveHistory = [];
+    currentMoveIndex = -1;
+    document.getElementById("output").textContent = "FEN loaded!";
+  }
+
+  // --- LOAD PGN ---
+  function loadPGN() {
+    const pgn = document.getElementById("pgnInput").value.trim();
+    if (!pgn) return;
+
+    const loaded = game.load_pgn(pgn);
+    if (!loaded) {
+      alert("Invalid PGN");
+      return;
+    }
+
+    moveHistory = game.history(); // store moves
+    currentMoveIndex = -1;
+    board.position(game.fen());
+    document.getElementById("output").textContent = "PGN loaded!";
+  }
+
+  // --- MOVE NAVIGATION ---
+  function nextMove() {
+    if (currentMoveIndex >= moveHistory.length - 1) return;
+    currentMoveIndex++;
+    game.move(moveHistory[currentMoveIndex]);
+    board.position(game.fen());
+  }
+
+  function prevMove() {
+    if (currentMoveIndex < 0) return;
+    game.undo();
+    currentMoveIndex--;
+    board.position(game.fen());
   }
 
   game.load(fen);       // load the FEN into the game
