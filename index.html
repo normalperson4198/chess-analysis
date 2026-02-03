@@ -48,6 +48,9 @@
 
   <div id="board"></div>
 
+  <input type="text" id="fenInput" placeholder="Enter FEN" style="width: 400px; padding: 6px; margin-bottom: 10px;">
+  <button onclick="loadFEN()">Load FEN</button>
+
   <button onclick="analyze()">Analyze</button>
 
   <div id="output">Engine output…</div>
@@ -101,6 +104,22 @@
       engine.postMessage("position fen " + game.fen());
       engine.postMessage("go depth 15");
     }
+
+    function loadFEN() {
+      const fen = document.getElementById("fenInput").value.trim();
+      if (!fen) return;
+
+      const valid = game.validate_fen(fen);
+  if (!valid.valid) {
+    alert("Invalid FEN: " + valid.error);
+    return;
+  }
+
+  game.load(fen);       // load the FEN into the game
+  board.position(fen);  // update the board
+  document.getElementById("output").textContent = "FEN loaded!";
+}
+
   </script>
 
 </body>
