@@ -1,153 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Chess Analysis</title>
+<meta charset="UTF-8" />
+<title>Chess Analysis</title>
 
-  <!-- Chessboard.js CSS -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"
-  />
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"/>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
 
-    #board {
-      width: 400px;
-      margin-bottom: 15px;
-    }
-
-    button {
-      padding: 10px 16px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-bottom: 10px;
-    }
-
-    #output {
-      background: #222;
-      padding: 10px;
-      width: 400px;
-      min-height: 40px;
-      font-family: monospace;
-    }
-  </style>
+  #board { width: 400px; margin-bottom: 15px; }
+  button { padding: 10px 16px; font-size: 16px; cursor: pointer; margin: 5px; }
+  #output, #moveList {
+    background: #222; padding: 10px; width: 400px; font-family: monospace; margin-bottom: 10px;
+  }
+  #pgnInput { width: 400px; margin-bottom: 10px; padding: 6px; }
+</style>
 </head>
 <body>
 
-  <h1>Chess Analysis</h1>
+<h1>Chess Analysis</h1>
 
-  <div id="board"></div>
+<div id="board"></div>
 
-  <input type="text" id="fenInput" placeholder="Enter FEN" style="width: 400px; padding: 6px; margin-bottom: 10px;">
-  
-  <button onclick="loadFEN()">Load FEN</button>
+<input type="text" id="fenInput" placeholder="Enter FEN" />
+<button onclick="loadFEN()">Load FEN</button>
 
-  <!-- PGN input -->
-  <textarea id="pgnInput" placeholder="Paste PGN here" rows="4"></textarea>
-  <button onclick="loadPGN()">Load PGN</button>
-  
+<textarea id="pgnInput" placeholder="Paste PGN here" rows="4"></textarea>
+<button onclick="loadPGN()">Load PGN</button>
+
+<div>
   <button onclick="prevMove()">← Previous Move</button>
   <button onclick="nextMove()">Next Move →</button>
-
   <button onclick="analyze()">Analyze</button>
+</div>
 
-  <div id="output">Engine output…</div>
+<div id="output">Engine output…</div>
+<div id="moveList">Moves with annotations will appear here.</div>
 
-  <!-- Dependencies -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 
-  <script>
-    // --- GAME LOGIC ---
-    const game = new Chess();
+<script>
+const game = new Chess();
+let moveHistory = [];
+let currentMoveIndex = -1;
+let moveAnnotations = [];
 
-    const board = Chessboard("board", {
-      draggable: true,
-      position: "start",
-      pieceTheme:
-        "https://cdn.jsdelivr.net/gh/oakmac/chessboardjs@1.0.0/website/img/chesspieces/wikipedia/{piece}.png",
-      onDrop: (source, target) => {
-        const move = game.move({
-          from: source,
-          to: target,
-          promotion: "q",
-        });
-        if (move === null) return "snapback";
-      },
-    });
-
-    board.position("start");
-
-    // --- STOCKFISH WORKER ---
-    const engine = new Worker("./engine/stockfish.js");
-
-    engine.onmessage = (e) => {
-      const line = e.data;
-
-      if (line.includes("info depth") && line.includes("score")) {
-        document.getElementById("output").textContent = line;
-      }
-
-      if (line.includes("bestmove")) {
-        document.getElementById("output").textContent = line;
-      }
-    };
-
-    engine.postMessage("uci");
-    engine.postMessage("isready");
-
-    // --- ANALYZE FUNCTION ---
-    function analyze() {
-      engine.postMessage("position fen " + game.fen());
-      engine.postMessage("go depth 15");
-    }
-
-  function loadFEN() {
-    const fen = document.getElementById("fenInput").value.trim();
-    if (!fen) return;
-
-    const valid = game.validate_fen(fen);
-    if (!valid.valid) {
-      alert("Invalid FEN: " + valid.error);
-      return;
-    }
-
-    game.load(fen);
-    board.position(fen);
-    moveHistory = [];
-    currentMoveIndex = -1;
-    document.getElementById("output").textContent = "FEN loaded!";
+const board = Chessboard("board", {
+  draggable: true,
+  position: "start",
+  pieceTheme: "https://cdn.jsdelivr.net/gh/oakmac/chessboardjs@1.0.0/website/img/chesspieces/wikipedia/{piece}.png",
+  onDrop: (source, target) => {
+    const move = game.move({from: source, to: target, promotion: "q"});
+    if (move === null) return "snapback";
   }
+});
 
-  // --- LOAD PGN ---
+// --- STOCKFISH ---
+const engine = new Worker("./engine/stockfish.js");
+engine.onmessage = (e) => {
+  const line = e.data;
+  if (line.includes("info depth") && line.includes("score")) {
+    document.getElementById("output").textContent = line;
+  }
+  if (line.includes("bestmove")) {
+    document.getElementById("output").textContent = line;
+  }
+};
+engine.postMessage("uci");
+engine.postMessage("isready");
+
+function analyze() {
+  engine.postMessage("position fen " + game.fen());
+  engine.postMessage("go depth 15");
+}
+
+// --- FEN ---
+function loadFEN() {
+  const fen = document.getElementById("fenInput").value.trim();
+  if (!fen) return;
+  const valid = game.validate_fen(fen);
+  if (!valid.valid) { alert("Invalid FEN: " + valid.error); return; }
+
+  game.load(fen);
+  board.position(fen);
+  moveHistory = [];
+  currentMoveIndex = -1;
+  document.getElementById("output").textContent = "FEN loaded!";
+  document.getElementById("moveList").textContent = "";
+}
+
+// --- PGN ---
 function loadPGN() {
   const pgn = document.getElementById("pgnInput").value.trim();
   if (!pgn) return;
-
   const loaded = game.load_pgn(pgn);
-  if (!loaded) {
-    alert("Invalid PGN");
-    return;
-  }
+  if (!loaded) { alert("Invalid PGN"); return; }
 
-  moveHistory = game.history();       // store all moves
-  currentMoveIndex = moveHistory.length - 1; // start at last move
-  board.position(game.fen());         // show final position
+  moveHistory = game.history();
+  currentMoveIndex = moveHistory.length - 1;
+  board.position(game.fen());
   document.getElementById("output").textContent = "PGN loaded!";
+
+  // Annotate moves
+  annotateMoves();
 }
 
-
+// --- NAVIGATION ---
 function nextMove() {
   if (currentMoveIndex >= moveHistory.length - 1) return;
   currentMoveIndex++;
@@ -162,7 +132,58 @@ function prevMove() {
   board.position(game.fen());
 }
 
-  </script>
+// --- Move Annotations ---
+function getMoveCategory(delta) {
+  if (delta > 300) return "Brilliant !!";
+  if (delta > 150) return "Critical !";
+  if (delta > 50) return "Best ★";
+  if (delta > 20) return "Excellent 👍";
+  if (delta > -20) return "Okay ✔";
+  if (delta > -70) return "Inaccuracy ?!";
+  if (delta > -200) return "Mistake ?";
+  return "Blunder ??";
+}
+
+// Very simple async Stockfish evaluation
+async function getStockfishEval(fen) {
+  return new Promise(resolve => {
+    const tempWorker = new Worker("./engine/stockfish.js");
+    tempWorker.onmessage = (e) => {
+      const line = e.data;
+      if (line.includes("bestmove")) tempWorker.terminate();
+      const m = line.match(/score cp (-?\d+)/);
+      if (m) resolve(parseInt(m[1]));
+    };
+    tempWorker.postMessage("uci");
+    tempWorker.postMessage("isready");
+    tempWorker.postMessage("position fen " + fen);
+    tempWorker.postMessage("go depth 10"); // fast, adjust as needed
+  });
+}
+
+async function annotateMoves() {
+  moveAnnotations = [];
+  const tempGame = new Chess();
+
+  for (let move of moveHistory) {
+    const fenBefore = tempGame.fen();
+    tempGame.move(move);
+    const fenAfter = tempGame.fen();
+
+    const evalBefore = await getStockfishEval(fenBefore);
+    const evalAfter = await getStockfishEval(fenAfter);
+
+    // Adjust delta for side to move
+    const delta = (tempGame.turn() === 'w') ? evalAfter - evalBefore : evalBefore - evalAfter;
+
+    const category = getMoveCategory(delta);
+    moveAnnotations.push(`${move} ${category}`);
+  }
+
+  // Show annotated moves
+  document.getElementById("moveList").innerHTML = moveAnnotations.join("<br>");
+}
+</script>
 
 </body>
 </html>
