@@ -2,128 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Custom Chess Analysis</title>
+  <title>Chess Analysis</title>
 
-  <!-- Chessboard CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
+  <!-- Chessboard.js CSS -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.css"
+  />
 
   <style>
     body {
-      background: #0f1220;
-      color: #fff;
-      font-family: system-ui, sans-serif;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
     }
-    .app {
-      max-width: 900px;
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 300px;
-      gap: 20px;
+
+    #board {
+      width: 400px;
+      margin-bottom: 15px;
     }
-    #board { width: 100%; }
-    .panel {
-      background: #181c3a;
-      border-radius: 12px;
-      padding: 15px;
+
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 10px;
     }
-    textarea, button, input {
-      width: 100%;
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-    }
-    button { background: #6cf; font-weight: bold; cursor: pointer; }
-    .eval { font-size: 18px; margin-top: 10px; }
-    @media (max-width: 800px) {
-      .app { grid-template-columns: 1fr; }
+
+    #output {
+      background: #222;
+      padding: 10px;
+      width: 400px;
+      min-height: 40px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="panel"><div id="board"></div></div>
-    <div class="panel">
-      <h3>Analysis</h3>
-      <textarea id="input" rows="4" placeholder="Paste FEN or PGN"></textarea>
-      <button id="loadBtn">Load</button>
-      <label>Depth</label>
-      <input type="range" min="5" max="20" value="12" id="depth" />
-      <button id="analyzeBtn">Analyze</button>
-      <div class="eval" id="eval">Eval: —</div>
-      <div id="best">Best move: —</div>
-      <small>Powered by Stockfish (GPLv3)</small>
-    </div>
-  </div>
 
-  <!-- LIBRARIES (STABLE GLOBAL BUILDS) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+  <h1>Chess Analysis</h1>
 
-  <!-- Stockfish: use Worker directly (MOST RELIABLE ON GITHUB PAGES) -->
+  <div id="board"></div>
+
+  <button onclick="analyze()">Analyze</button>
+
+  <div id="output">Engine output…</div>
+
+  <!-- Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0/chess.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.js"></script>
+
   <script>
-    function createStockfish() {
-      return new Worker('https://cdn.jsdelivr.net/npm/stockfish@16.1.0/src/stockfish.js');
+    // --- GAME LOGIC ---
+    const game = new Chess();
+
+    const board = Chessboard("board", {
+      draggable: true,
+      position: "start",
+      pieceTheme:
+        "https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/img/chesspieces/wikipedia/{piece}.png",
+      onDrop: (source, target) => {
+        const move = game.move({
+          from: source,
+          to: target,
+          promotion: "q",
+        });
+
+        if (move === null) return "snapback";
+      },
+    });
+
+    // --- STOCKFISH WORKER ---
+    const engine = new Worker(
+      "https://cdn.jsdelivr.net/gh/niklasf/stockfish.js/stockfish.js"
+    );
+
+    engine.onmessage = (e) => {
+      const line = e.data;
+
+      if (line.includes("info depth") && line.includes("score")) {
+        document.getElementById("output").textContent = line;
+      }
+
+      if (line.includes("bestmove")) {
+        document.getElementById("output").textContent = line;
+      }
+    };
+
+    engine.postMessage("uci");
+    engine.postMessage("isready");
+
+    // --- ANALYZE FUNCTION ---
+    function analyze() {
+      engine.postMessage("position fen " + game.fen());
+      engine.postMessage("go depth 15");
     }
   </script>
 
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      console.log('Chess:', typeof Chess);
-      console.log('Chessboard:', typeof Chessboard);
-
-      const game = new Chess();
-
-      const board = Chessboard('board', {
-        position: 'start',
-        draggable: true,
-        // FIX 404s: explicitly set piece image source
-        pieceTheme: 'https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/img/chesspieces/wikipedia/{piece}.png',
-        onDrop: (s, t) => {
-          const m = game.move({ from: s, to: t, promotion: 'q' });
-          if (!m) return 'snapback';
-          analyze();
-        }
-      });
-
-      const engine = createStockfish();
-
-      engine.onmessage = e => {
-        const line = e.data;
-        if (line.includes('score')) {
-          const m = line.match(/score (cp|mate) (-?\d+)/);
-          if (m) {
-            const v = m[1] === 'cp' ? (m[2] / 100).toFixed(2) : `Mate ${m[2]}`;
-            document.getElementById('eval').textContent = 'Eval: ' + v;
-          }
-        }
-        if (line.startsWith('bestmove')) {
-          document.getElementById('best').textContent = 'Best move: ' + line.split(' ')[1];
-        }
-      };
-
-      function analyze() {
-        engine.postMessage('stop');
-        engine.postMessage('position fen ' + game.fen());
-        engine.postMessage('go depth ' + document.getElementById('depth').value);
-      }
-
-      function loadPosition() {
-        const t = document.getElementById('input').value.trim();
-        if (game.load(t) || game.load_pgn(t)) {
-          board.position(game.fen());
-          analyze();
-        } else alert('Invalid FEN or PGN');
-      }
-
-      document.getElementById('loadBtn').onclick = loadPosition;
-      document.getElementById('analyzeBtn').onclick = analyze;
-    });
-  </script>
 </body>
 </html>
