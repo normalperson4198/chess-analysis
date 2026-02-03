@@ -136,6 +136,19 @@ async function getStockfishEval(fen) {
   });
 }
 
+  function getMoveCategory(delta) {
+  // delta is in centipawns (cp)
+  // Positive delta = good for side to move, negative = bad
+  if (delta > 300) return "Brilliant !!";
+  if (delta > 150) return "Excellent 👍";
+  if (delta > 50)  return "Best ★";
+  if (delta > -50) return "Okay ✔";
+  if (delta > -150) return "Inaccuracy ?";
+  if (delta > -300) return "Mistake ?";
+  return "Blunder ??";
+}
+
+
 let evalHistory = []; // Stores Stockfish evaluation for each move
 
 async function annotateMoves() {
