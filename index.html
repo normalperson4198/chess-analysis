@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Custom Chess Analysis</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
+  <!-- Chessboard CSS (REQUIRED) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
 
   <style>
     body {
@@ -59,19 +60,28 @@
     </div>
   </div>
 
-  <!-- LIBRARIES (KNOWN WORKING GLOBAL BUILDS) -->
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <!-- LIBRARIES (ORDER IS CRITICAL) -->
 
-  <!-- IMPORTANT: this is the GLOBAL UMD build that defines window.Chess -->
+  <!-- jQuery MUST be first for chessboard.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+  <!-- chess.js (GLOBAL BUILD) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
-  <script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <!-- chessboard.js (GLOBAL BUILD) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
+  <!-- Stockfish WASM -->
   <script src="https://cdn.jsdelivr.net/npm/stockfish@16.1.0/src/stockfish.js"></script>
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      if (typeof Chess === 'undefined') {
-        alert('Chess.js failed to load. Check CDN or cache.');
+      // Sanity checks
+      console.log('Chess:', typeof Chess);
+      console.log('Chessboard:', typeof Chessboard);
+
+      if (typeof Chess === 'undefined' || typeof Chessboard === 'undefined') {
+        alert('Libraries failed to load. Check CDN cache.');
         return;
       }
 
