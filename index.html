@@ -49,64 +49,70 @@
     <div class="panel">
       <h3>Analysis</h3>
       <textarea id="input" rows="4" placeholder="Paste FEN or PGN"></textarea>
-      <button onclick="loadPosition()">Load</button>
+      <button id="loadBtn">Load</button>
       <label>Depth</label>
       <input type="range" min="5" max="20" value="12" id="depth" />
-      <button onclick="analyze()">Analyze</button>
+      <button id="analyzeBtn">Analyze</button>
       <div class="eval" id="eval">Eval: —</div>
       <div id="best">Best move: —</div>
       <small>Powered by Stockfish (GPLv3)</small>
     </div>
   </div>
 
+  <!-- Libraries (ORDER MATTERS) -->
   <script src="https://unpkg.com/jquery@3.7.1/dist/jquery.min.js"></script>
-  <script src="https://unpkg.com/chess.js@1.0.0/chess.min.js"></script>
+  <script src="https://unpkg.com/chess.js@0.12.0/chess.min.js"></script>
   <script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-
-  <!-- WORKING Stockfish WASM -->
   <script src="https://unpkg.com/stockfish@16.1.0/src/stockfish.js"></script>
 
   <script>
-    const game = new Chess();
-    const board = Chessboard('board', {
-      position: 'start',
-      draggable: true,
-      onDrop: (s, t) => {
-        const m = game.move({ from: s, to: t, promotion: 'q' });
-        if (!m) return 'snapback';
-        analyze();
-      }
-    });
+    // Wait until everything is loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      const game = new Chess();
 
-    const engine = Stockfish();
-
-    engine.onmessage = e => {
-      const line = e.data || e;
-      if (line.includes('score')) {
-        const m = line.match(/score (cp|mate) (-?\d+)/);
-        if (m) {
-          const v = m[1] === 'cp' ? (m[2] / 100).toFixed(2) : `Mate ${m[2]}`;
-          document.getElementById('eval').textContent = 'Eval: ' + v;
+      const board = Chessboard('board', {
+        position: 'start',
+        draggable: true,
+        onDrop: (s, t) => {
+          const m = game.move({ from: s, to: t, promotion: 'q' });
+          if (!m) return 'snapback';
+          analyze();
         }
-      }
-      if (line.startsWith('bestmove')) {
-        document.getElementById('best').textContent = 'Best move: ' + line.split(' ')[1];
-      }
-    };
+      });
 
-    function analyze() {
-      engine.postMessage('stop');
-      engine.postMessage('position fen ' + game.fen());
-      engine.postMessage('go depth ' + depth.value);
-    }
+      const engine = Stockfish();
 
-    function loadPosition() {
-      const t = input.value.trim();
-      if (game.load(t) || game.loadPgn(t)) {
-        board.position(game.fen());
-        analyze();
-      } else alert('Invalid FEN or PGN');
-    }
+      engine.onmessage = e => {
+        const line = e.data || e;
+        if (line.includes('score')) {
+          const m = line.match(/score (cp|mate) (-?\d+)/);
+          if (m) {
+            const v = m[1] === 'cp' ? (m[2] / 100).toFixed(2) : `Mate ${m[2]}`;
+            document.getElementById('eval').textContent = 'Eval: ' + v;
+          }
+        }
+        if (line.startsWith('bestmove')) {
+          document.getElementById('best').textContent = 'Best move: ' + line.split(' ')[1];
+        }
+      };
+
+      function analyze() {
+        engine.postMessage('stop');
+        engine.postMessage('position fen ' + game.fen());
+        engine.postMessage('go depth ' + document.getElementById('depth').value);
+      }
+
+      function loadPosition() {
+        const t = document.getElementById('input').value.trim();
+        if (game.load(t) || game.load_pgn(t)) {
+          board.position(game.fen());
+          analyze();
+        } else alert('Invalid FEN or PGN');
+      }
+
+      document.getElementById('loadBtn').onclick = loadPosition;
+      document.getElementById('analyzeBtn').onclick = analyze;
+    });
   </script>
 </body>
 </html>
