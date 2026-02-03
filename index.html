@@ -59,15 +59,22 @@
     </div>
   </div>
 
-  <!-- Libraries (ORDER MATTERS) -->
-  <script src="https://unpkg.com/jquery@3.7.1/dist/jquery.min.js"></script>
-  <script src="https://unpkg.com/chess.js@0.12.0/chess.min.js"></script>
+  <!-- LIBRARIES (KNOWN WORKING GLOBAL BUILDS) -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+
+  <!-- IMPORTANT: this is the GLOBAL UMD build that defines window.Chess -->
+  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.js"></script>
+
   <script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-  <script src="https://unpkg.com/stockfish@16.1.0/src/stockfish.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stockfish@16.1.0/src/stockfish.js"></script>
 
   <script>
-    // Wait until everything is loaded
     window.addEventListener('DOMContentLoaded', () => {
+      if (typeof Chess === 'undefined') {
+        alert('Chess.js failed to load. Check CDN or cache.');
+        return;
+      }
+
       const game = new Chess();
 
       const board = Chessboard('board', {
