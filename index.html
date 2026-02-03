@@ -109,11 +109,13 @@ function loadPGN() {
   if (!loaded) { alert("Invalid PGN"); return; }
 
   moveHistory = game.history();
-  currentMoveIndex = moveHistory.length - 1;
+  currentMoveIndex = -1;      // Start at the beginning
+  game.reset();               // Reset board to starting position
   board.position(game.fen());
   document.getElementById("output").textContent = "PGN loaded!";
+  document.getElementById("moveList").textContent = "";
 
-  // Annotate moves
+  // Precompute annotations
   annotateMoves();
 }
 
@@ -123,6 +125,9 @@ function nextMove() {
   currentMoveIndex++;
   game.move(moveHistory[currentMoveIndex]);
   board.position(game.fen());
+
+  // Show annotation for this move
+  document.getElementById("moveList").textContent = moveAnnotations[currentMoveIndex] || "";
 }
 
 function prevMove() {
@@ -130,6 +135,13 @@ function prevMove() {
   game.undo();
   currentMoveIndex--;
   board.position(game.fen());
+
+  // Show annotation for this move (previous move)
+  if (currentMoveIndex >= 0) {
+    document.getElementById("moveList").textContent = moveAnnotations[currentMoveIndex] || "";
+  } else {
+    document.getElementById("moveList").textContent = ""; // At start
+  }
 }
 
 // --- Move Annotations ---
