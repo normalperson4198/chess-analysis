@@ -131,35 +131,35 @@
   }
 
   // --- LOAD PGN ---
-  function loadPGN() {
-    const pgn = document.getElementById("pgnInput").value.trim();
-    if (!pgn) return;
+function loadPGN() {
+  const pgn = document.getElementById("pgnInput").value.trim();
+  if (!pgn) return;
 
-    const loaded = game.load_pgn(pgn);
-    if (!loaded) {
-      alert("Invalid PGN");
-      return;
-    }
-
-    moveHistory = game.history(); // store moves
-    currentMoveIndex = -1;
-    board.position(game.fen());
-    document.getElementById("output").textContent = "PGN loaded!";
+  const loaded = game.load_pgn(pgn);
+  if (!loaded) {
+    alert("Invalid PGN");
+    return;
   }
 
-  // --- MOVE NAVIGATION ---
-  function nextMove() {
-    if (currentMoveIndex >= moveHistory.length - 1) return;
-    currentMoveIndex++;
-    game.move(moveHistory[currentMoveIndex]);
-    board.position(game.fen());
-  }
+  moveHistory = game.history();       // store all moves
+  currentMoveIndex = moveHistory.length - 1; // start at last move
+  board.position(game.fen());         // show final position
+  document.getElementById("output").textContent = "PGN loaded!";
+}
 
-  function prevMove() {
-    if (currentMoveIndex < 0) return;
-    game.undo();
-    currentMoveIndex--;
-    board.position(game.fen());
+
+function nextMove() {
+  if (currentMoveIndex >= moveHistory.length - 1) return;
+  currentMoveIndex++;
+  game.move(moveHistory[currentMoveIndex]);
+  board.position(game.fen());
+}
+
+function prevMove() {
+  if (currentMoveIndex < 0) return;
+  game.undo();
+  currentMoveIndex--;
+  board.position(game.fen());
 }
 
   </script>
