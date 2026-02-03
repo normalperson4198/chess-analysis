@@ -119,43 +119,6 @@ function loadPGN() {
   annotateMoves();
 }
 
-// --- NAVIGATION ---
-function nextMove() {
-  if (currentMoveIndex >= moveHistory.length - 1) return;
-  currentMoveIndex++;
-  game.move(moveHistory[currentMoveIndex]);
-  board.position(game.fen());
-
-  // Show annotation for this move
-  document.getElementById("moveList").textContent = moveAnnotations[currentMoveIndex] || "";
-}
-
-function prevMove() {
-  if (currentMoveIndex < 0) return;
-  game.undo();
-  currentMoveIndex--;
-  board.position(game.fen());
-
-  // Show annotation for this move (previous move)
-  if (currentMoveIndex >= 0) {
-    document.getElementById("moveList").textContent = moveAnnotations[currentMoveIndex] || "";
-  } else {
-    document.getElementById("moveList").textContent = ""; // At start
-  }
-}
-
-// --- Move Annotations ---
-function getMoveCategory(delta) {
-  if (delta > 300) return "Brilliant !!";
-  if (delta > 150) return "Critical !";
-  if (delta > 50) return "Best ★";
-  if (delta > 20) return "Excellent 👍";
-  if (delta > -20) return "Okay ✔";
-  if (delta > -70) return "Inaccuracy ?!";
-  if (delta > -200) return "Mistake ?";
-  return "Blunder ??";
-}
-
 // Very simple async Stockfish evaluation
 async function getStockfishEval(fen) {
   return new Promise(resolve => {
@@ -173,27 +136,56 @@ async function getStockfishEval(fen) {
   });
 }
 
+let evalHistory = []; // Stores Stockfish evaluation for each move
+
 async function annotateMoves() {
   moveAnnotations = [];
-  const tempGame = new Chess();
+  evalHistory = [];
 
-  for (let move of moveHistory) {
+  const tempGame = new Chess();
+  for (let i = 0; i < moveHistory.length; i++) {
     const fenBefore = tempGame.fen();
-    tempGame.move(move);
+    tempGame.move(moveHistory[i]);
     const fenAfter = tempGame.fen();
 
+    // Stockfish evals
     const evalBefore = await getStockfishEval(fenBefore);
     const evalAfter = await getStockfishEval(fenAfter);
+    
+    evalHistory.push(evalAfter);
 
-    // Adjust delta for side to move
-    const delta = (tempGame.turn() === 'w') ? evalAfter - evalBefore : evalBefore - evalAfter;
+    // Compute delta from the perspective of the side who just moved
+    const delta = (tempGame.turn() === 'w') 
+                  ? evalBefore - evalAfter 
+                  : evalAfter - evalBefore;
 
     const category = getMoveCategory(delta);
-    moveAnnotations.push(`${move} ${category}`);
+    moveAnnotations.push(`${moveHistory[i]} → ${category}`);
   }
+}
 
-  // Show annotated moves
-  document.getElementById("moveList").innerHTML = moveAnnotations.join("<br>");
+// Use annotations when navigating
+function nextMove() {
+  if (currentMoveIndex >= moveHistory.length - 1) return;
+  currentMoveIndex++;
+  game.move(moveHistory[currentMoveIndex]);
+  board.position(game.fen());
+
+  document.getElementById("moveList").textContent =
+    moveAnnotations[currentMoveIndex] || "";
+}
+
+function prevMove() {
+  if (currentMoveIndex < 0) return;
+  game.undo();
+  currentMoveIndex--;
+  board.position(game.fen());
+
+  if (currentMoveIndex >= 0)
+    document.getElementById("moveList").textContent =
+      moveAnnotations[currentMoveIndex] || "";
+  else
+    document.getElementById("moveList").textContent = "";
 }
 </script>
 
